@@ -11,6 +11,7 @@ mongoose.connect(uri, {
     useNewUrlParser:true,
     useUnifiedTopology: true,
 })
+mongoose.set('useFindAndModify', false);
 
 const conn = mongoose.connection;
 

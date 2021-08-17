@@ -5,6 +5,9 @@ const profileSchema = mongoose.Schema({
     uid: reqString,
     username: reqString,
     userAvatar: String, 
+    desc:String,
+    following: [String],
+    followers: [String]
 }, {
     timestamps:true,
 });
