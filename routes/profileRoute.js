@@ -126,7 +126,7 @@ router.post('/followProfile', async (req, res) => {
         await Profile.updateOne(
             {uid: body.followUid}, 
             {$addToSet : { followers : body.uid}})
-            
+
         // Return as success
         return res.json({
             success:true,
@@ -183,6 +183,44 @@ router.get('/isFollowing/:userId/:followUserId', async (req, res) => {
             success:false,
             error: error,
         })
+    }
+})
+
+router.post('/description/set', async (req, res) => {
+    try {
+        const body = req.body
+        console.log("Set description body")
+        console.log(body)
+        await Profile.updateOne({uid: body.userId}, {desc: body.desc})
+        return res.json({
+            success: true,
+            data:true,
+        })
+    } catch (error) {
+        return res.json({
+            success: false,
+            data: false,
+        })
+    }
+})
+
+router.get('/search/:value', async (req, res) => {
+    try {
+        const profiles = await Profile.find(
+            { $text : { $search:  req.params.value}}, {uid:1, username:1, userAvatar:1}
+        )
+        return res.json({
+            success: true,
+            data: profiles
+        })
+    } catch (error) {
+        console.log('Error in profile.search')
+        console.log(error)
+        return res.json({
+            success: false,
+            error: error,
+        })
+        
     }
 })
 

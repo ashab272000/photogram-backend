@@ -10,8 +10,8 @@ mongoose.connect(uri, {
     useCreateIndex:true,
     useNewUrlParser:true,
     useUnifiedTopology: true,
+    useFindAndModify: false,
 })
-mongoose.set('useFindAndModify', false);
 
 const conn = mongoose.connection;
 
