@@ -11,6 +11,7 @@ dotenv.config()
 
 const storage = new MulterGridfsStorage.GridFsStorage({
         url: process.env.ATLAS_URI,
+        options: {useUnifiedTopology: true},
         file: (req, file) => {
             return new Promise((resolve, reject) => {
             crypto.randomBytes(16, (err, buf) => {

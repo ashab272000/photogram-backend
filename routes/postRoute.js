@@ -2,7 +2,7 @@ import Router from 'express'
 import { upload } from '../middleware/storage.js'
 import Post from '../models/post.js'
 import Profile from '../models/profile.js'
-import {gfs} from '../db/db.js'
+import {conn, gfs} from '../db/db.js'
 import Comment from '../models/comment.js'
 import mongoose from 'mongoose'
 
@@ -295,7 +295,7 @@ router.post('/add', upload.single('image') ,async (req, res, next) => {
 
         const newPost = new Post({
             caption: body.caption,
-            image: req.file.filename,
+            image: req.file.id,
             comments: [],
             likedBy: [],
             uid: body.uid,
@@ -372,6 +372,70 @@ router.post('/addLike', async (req, res)=> {
         }
     } catch (err) {
         return res.status(400).json({success: false, error: err})
+    }  
+})
+
+router.post('/deleteImage', async (req, res) => {
+    try {
+
+        // const body = req.body;
+        // console.log("Printing Body")
+        // console.log(body)
+        // const file = await gfs.find({filename: body.image})
+        // console.log("Printing file that was deleted")
+        // console.log(file)
+        // const deletedFile = await gfs.delete(file._id);
+        // console.log(deletedFile)
+        const files = conn.db.collection('images.files')
+        const file = await files.findOneAndDelete({filename: req.body.image})
+        console.log("printing File")
+        console.log(file)
+        const chunks = conn.db.collection('images.chunks');
+        const result = await chunks.deleteMany({files_id: mongoose.Types.ObjectId(file.id)})
+        console.log("deleted Count")
+        console.log(result.deletedCount)
+
+        return res.json({success: true, data: 'maybe'})
+    } catch (error) {
+        console.log(error)
+        return res.status(400).json({success: false, error: error})
+    }
+})
+
+router.post('/deletePost', async (req, res)=> {
+
+    const body = req.body;
+    try {
+        // gfs.files.findOne({filename:req.params.filename}, (err, file) => {
+        //     console.log(file);
+        //     if(!file || file.length === 0) {
+        //         return res.status(400).json('Error: ' + err)
+        //     }
+            
+        //     const readstream = gfs.createReadStream(file.filename)
+        //     readstream.pipe(res)
+        // })     
+
+        // const post = await Post.findById(body.postId)
+        // post = await post.likedBy.pull(body.uid)
+        // post.save()
+        const post = await Post.findOneAndDelete({ _id: body.postId })
+        if(post == null)
+        {
+            return res.json({success: true, data: null})
+        }
+        const files = conn.db.collection('images.files')
+        const file = await files.findOneAndDelete({filename: post.image})
+        console.log("printing File")
+        console.log(file)
+        const chunks = conn.db.collection('images.chunks');
+        const result = await chunks.deleteMany({files_id: mongoose.Types.ObjectId(file.id)})
+        console.log("deleted Count")
+        console.log(result.deletedCount)
+
+        return res.json({success: true, data: post})
+    } catch (err) {
+        return res.status(400).json({success: false, error: error})
     }  
 })
 
