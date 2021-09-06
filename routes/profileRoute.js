@@ -26,11 +26,12 @@ router.get('/', async (req,res) => {
 })
 
 router.post('/add', async (req, res) => {
-    const body = req.body;
-    console.log('profile/add')
-    console.log(body);
     
     try {
+        const body = req.body;
+        console.log('profile/add')
+        console.log(req);
+
         const newProfile = new Profile({
             uid: body.uid,
             username: body.username,
@@ -47,6 +48,8 @@ router.post('/add', async (req, res) => {
 
         return res.json(response);
     } catch (err) {
+        console.log("error at profile/add")
+        console.log(err)
         return res.status(400).json({success: false, error: err})
     }
 })

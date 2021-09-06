@@ -145,18 +145,26 @@ router.get('/trending/:limit/:date', async (req, res) => {
         // First sort by the likes (desc)
         // Then sort by the date (desc)
         // 
+        const limit = parseInt(req.params.limit)
         const posts = await Post
-        .find({createdAt: {$lt: date}},
-            {uid:1, caption:1, image:1, createdAt:1, 
-            numOfLikes: {$size: "$likedBy"},
-            numOfComments: {$size: '$comments'},
-            trendScore: {
-                $divide : [ {$size: "$likedBy"},
-                { $divide: [ {$subtract : [new Date(), "$createdAt"]}, 3600000 ]}]
-            }
-        })
-        .sort({ trendScore: -1})
-        .limit(parseInt(req.params.limit))
+        .aggregate([
+            {$match: {createdAt: {$lt: date}},},
+            {$addFields: {
+                trendScore: {
+                    $divide : [{$size: { $ifNull: ["$likedBy", []]}},
+                    { $divide: [ {$subtract : [new Date(), "$createdAt"]}, 3600000 ]}]
+                }
+            }},
+            {$project: {uid:1, caption:1, image:1, createdAt:1,
+                numOfLikes: {$size: "$likedBy"},
+                numOfComments: {$size: '$comments'},
+                trendScore: 1,
+            },},
+            {$sort : {
+                trendScore: -1,
+            }},
+            {$limit: limit}
+        ],)
 
         // Get all the names and user avatar of the followed user
         const userIds = posts.map((post) => {
@@ -182,8 +190,7 @@ router.get('/trending/:limit/:date', async (req, res) => {
                     break;
                 }                
             }
-
-            posts[i] = Object.assign({}, posts[i]._doc, {username,userAvatar})
+            posts[i] = Object.assign({}, posts[i], {username,userAvatar})
         }
         
         return res.json({
@@ -192,7 +199,7 @@ router.get('/trending/:limit/:date', async (req, res) => {
         })
         
     } catch (error) {
-        console.log("Error in getFollowingPosts")
+        console.log("Error in getTrendingPost")
         console.log(error)
         return res.json({
             success: false,
@@ -295,7 +302,7 @@ router.post('/add', upload.single('image') ,async (req, res, next) => {
 
         const newPost = new Post({
             caption: body.caption,
-            image: req.file.id,
+            image: req.file.filename,
             comments: [],
             likedBy: [],
             uid: body.uid,
@@ -429,7 +436,7 @@ router.post('/deletePost', async (req, res)=> {
         console.log("printing File")
         console.log(file)
         const chunks = conn.db.collection('images.chunks');
-        const result = await chunks.deleteMany({files_id: mongoose.Types.ObjectId(file.id)})
+        const result = await chunks.deleteMany({files_id: mongoose.Types.ObjectId(file._id)})
         console.log("deleted Count")
         console.log(result.deletedCount)
 
